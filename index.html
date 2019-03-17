@@ -59,14 +59,14 @@
         <script>
             
             //flower properties
-            var n = 600;
+            var n = 500;
             var turnValue = 0.61803398875;
-            var radius = 0.25;
+            var radius = 0.35;
             var seedRadius = 4;
 
            
             //setup canvas
-            var width = 1300;
+            var width = parseInt(d3.select(".content").style("width"));
             var height = 600;
             var svg = d3.select("svg");
             svg.style("height",height);
