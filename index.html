@@ -5,12 +5,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Pacifico" rel="stylesheet">
+
             <script src="https://d3js.org/d3.v5.min.js"></script>
             <script src="./victor.min.js"></script>
             <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
             <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
             <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
             <style>
+                h1{
+                    font-family: 'Pacifico', cursive;
+                }
                 .form{
                     text-align: center;
                 }
@@ -54,9 +59,9 @@
         <script>
             
             //flower properties
-            var n = 400;
+            var n = 600;
             var turnValue = 0.61803398875;
-            var radius = 0.5;
+            var radius = 0.25;
             var seedRadius = 4;
 
            
@@ -191,16 +196,25 @@
                 positionY[j]  = d3.select(this).style("cy");
                 j++;
             });
-            svg.selectAll("circle").transition().style("cx",centerX).style("cy", centerY).style("r",0).ease(d3.easeQuadIn);                        
-            svg.selectAll("circle").transition().delay(function(d,i){
-                return i * 40; 
-            }).style("cx", function(d,i){
+            var shrink = svg.transition().duration(100);
+            var translation = svg.transition().delay(100).duration(100);
+            var grow = svg.transition().delay(300).duration(100);
+
+
+            shrink.selectAll("circle").style("cx",centerX).style("cy", centerY).style("r",0).ease(d3.easeQuadIn);                        
+            
+            translation.selectAll("circle")
+            .style("cx", function(d,i){
                 return positionX[i];
             }).style("cy", function(d,i){
                 return positionY[i];
+            });
+            
+            grow.selectAll("circle").delay(function(d,i){
+                return i * 10; 
             }).style("r", function(d,i){
                 return radius[i];
-            }).ease(d3.easeBounceIn);
+            }).ease(d3.easeBounceOut);
         }
         </script>
     </body>
