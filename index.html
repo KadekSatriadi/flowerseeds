@@ -62,7 +62,7 @@
             var n = 500;
             var turnValue = 0.61803398875;
             var radius = 0.35;
-            var seedRadius = 4;
+            var seedRadius = 5;
 
            
             //setup canvas
@@ -84,7 +84,9 @@
             
                 .interpolate(d3.interpolateHcl);
 
-            Update();
+            Init();
+            UpdateSeedSize();
+            UpdatePosition();
 
             //UI
             $( function() {
@@ -93,17 +95,22 @@
                     if (event.keyCode == 13) {
                         turnValue =  $("#valueinput").val();
                         $( "#valueslider" ).slider('value',turnValue);
-                        Update();
+                        UpdatePosition();
                     }
                 });
                 $( "#valueslider" ).slider({
                     min: 0,
                     step: 0.0001,
                     max: 1,
-                    slide: function( event, ui ) {
+                    stop: function( event, ui ) {
                         turnValue = ui.value;
-                        $( "#valueinput" ).val(turnValue);
-                        Update();
+                        UpdatePosition();
+                    }
+                });
+
+                $( "#valueslider" ).slider({
+                    slide: function(event, ui){
+                        $('#valueinput').val(ui.value);
                     }
                 });
 
@@ -113,7 +120,7 @@
                     max: radius * 2,
                     slide: function(event, ui){
                         radius = ui.value;
-                        Update();
+                        UpdatePosition();
                     }
                 });
 
@@ -123,7 +130,7 @@
                     max: seedRadius * 5,
                     slide: function(event, ui){
                         seedRadius = ui.value;
-                        Update();
+                        UpdateSeedSize();
                     }
                 });
 
@@ -139,26 +146,36 @@
 
             } );
 
-        function Update(){
+        //populate seeds
+        function Init(){
             seeds = [];
-
-            //clear up canvas
             svg.selectAll("circle").remove();
+
+            //create center
+            svg.append("circle").style("cx", centerX).style("cy", centerY).style("r",3);
+
+            for(var i = 0; i < n -1; i++){
+                seeds[i] = svg.append("circle");
+                seeds[i].style("r", 0.005);
+                seeds[i].style("cy", centerX);
+                seeds[i].style("cx", centerY);
+                seeds[i].style("fill", colorFunction(i));
+            }
+        }
+
+        function UpdatePosition(){
+            //clear up canvas
             var lastY = centerY;
             var lastX = centerX + radius;
 
             //turn to radian
             var turnValueRadian = turnValue * 2 * Math.PI;
 
-            //create center
-            svg.append("circle").style("cx", centerX).style("cy", centerY).style("r",3);
+            //Get new positions
+            var newPositions = [];
+            newPositions[0] = {x : lastX, y: lastY};
 
-            for(var i = 0; i < n -1; i++){
-                //create seed
-                seeds[i] = svg.append("circle");
-                seeds[i].style("r", seedRadius * i * 0.005);
-                seeds[i].style("cy", lastY);
-                seeds[i].style("cx", lastX);
+            for(var i = 0; i < n; i++){
                 var rotatePoint = RotatePointAround(lastX, lastY, centerX, centerY, turnValueRadian);
                 lastX = rotatePoint[0];
                 lastY = rotatePoint[1];
@@ -168,12 +185,31 @@
                 var normalisedDirection = direction.normalize();
                 var newPosition = new Victor(lastX, lastY)
                                     .add(new Victor(normalisedDirection.x * radius, normalisedDirection.y * radius));
+
                 lastX = newPosition.x;
                 lastY = newPosition.y;
 
-                seeds[i].style("fill", colorFunction(i));
+                newPositions[i] = {x : lastX, y: lastY};
             }
 
+            //animation          
+            d3.selectAll('circle').transition().duration(500)
+            .style('cx', function(d,i) {
+                return newPositions[i].x})
+            .style('cy', function(d,i) {
+                return newPositions[i].y})
+            .ease(d3.easeSinInOut);      
+
+        }
+        
+        function UpdateSeedSize(){
+            d3.selectAll('circle').transition().duration(100).style('r', function(d,i){
+                return RadiusFunction(i);
+            });
+        }
+
+        function RadiusFunction(i){
+            return i * seedRadius * 0.005;
         }
 
         //rotate 2D point around 2D point in angle radian
