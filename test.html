@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css?family=Pacifico" rel="stylesheet">
+    <script src="./flowerseeds.js"></script>
 
             <script src="https://d3js.org/d3.v5.min.js"></script>
             <script src="./victor.min.js"></script>
@@ -57,42 +58,44 @@
                 </div>
         </div>
         <script>
-            
+            var flower = new FlowerSeeds();
             //flower properties
-            var n = 500;
-            var turnValue = 0.61803398875;
-            var radius = 0.35;
+            var n = 100;
+            var radius = 0.35
             var seedRadius = 4;
+            var turnValue = 0.61803398875
+            flower.n = n;
+            flower.turnValue = turnValue;
+            flower.size = radius;
+            flower.seedRadius =seedRadius;
 
            
             //setup canvas
             var width = parseInt(d3.select(".content").style("width")) - 20;
             var height = 600;
-            var svg = d3.select("svg");
-            svg.style("height",height);
-            svg.style("width",width);
+            flower.svg = d3.select("svg");
+            flower.svg.style("height",height);
+            flower.svg.style("width",width);
 
-            var centerY = height/2;
-            var centerX = width/2; 
-
-            var seeds;
+            flower.centerY = height/2;
+            flower.centerX = width/2; 
 
             //color
-            var colorFunction = d3.scaleLinear()
+            flower.colorFunction = d3.scaleLinear()
                 .domain([1, n/4, n/2, n])
                 .range(['#2D7DD2', '#EEB902', '#97CC04', '#E54B4B'])          
                 .interpolate(d3.interpolateHcl);
 
-            Update();
+            flower.Update();
 
             //UI
             $( function() {
                
                 $("#valueinput").keypress(function(event){
                     if (event.keyCode == 13) {
-                        turnValue =  $("#valueinput").val();
+                        flower.turnValue =  $("#valueinput").val();
                         $( "#valueslider" ).slider('value',turnValue);
-                        Update();
+                        flower.Update();
                     }
                 });
                 $( "#valueslider" ).slider({
@@ -100,9 +103,9 @@
                     step: 0.0001,
                     max: 1,
                     slide: function( event, ui ) {
-                        turnValue = ui.value;
+                        flower.turnValue = ui.value;
                         $( "#valueinput" ).val(turnValue);
-                        Update();
+                        flower.Update();
                     }
                 });
 
@@ -111,8 +114,8 @@
                     step: 0.001,
                     max: radius * 2,
                     slide: function(event, ui){
-                        radius = ui.value;
-                        Update();
+                        flower.size = ui.value;
+                        flower.Update();
                     }
                 });
 
@@ -121,13 +124,13 @@
                     step: 0.1,
                     max: seedRadius * 5,
                     slide: function(event, ui){
-                        seedRadius = ui.value;
-                        Update();
+                        flower.seedRadius = ui.value;
+                        flower.Update();
                     }
                 });
 
                 $( "#animatebutton" ).click(function() {
-                    Animate();
+                    flower.Animate();
                 });
 
                  //init UI
@@ -138,83 +141,7 @@
 
             } );
 
-        function Update(){
-            seeds = [];
-
-            //clear up canvas
-            svg.selectAll("circle").remove();
-            var lastY = centerY;
-            var lastX = centerX + radius;
-
-            //turn to radian
-            var turnValueRadian = turnValue * 2 * Math.PI;
-
-            //create center
-            svg.append("circle").style("cx", centerX).style("cy", centerY).style("r",3);
-
-            for(var i = 0; i < n -1; i++){
-                //create seed
-                seeds[i] = svg.append("circle");
-                seeds[i].style("r", seedRadius * i * 0.005);
-                seeds[i].style("cy", lastY);
-                seeds[i].style("cx", lastX);
-                var rotatePoint = RotatePointAround(lastX, lastY, centerX, centerY, turnValueRadian);
-                lastX = rotatePoint[0];
-                lastY = rotatePoint[1];
-
-                //shift it away from center
-                var direction = new Victor(lastX, lastY).subtract(new Victor(centerX, centerY));
-                var normalisedDirection = direction.normalize();
-                var newPosition = new Victor(lastX, lastY)
-                                    .add(new Victor(normalisedDirection.x * radius, normalisedDirection.y * radius));
-                lastX = newPosition.x;
-                lastY = newPosition.y;
-
-                seeds[i].style("fill", colorFunction(i));
-            }
-
-        }
-
-        //rotate 2D point around 2D point in angle radian
-        function RotatePointAround(x, y, cx, cy, angle){
-            var rotatedX = Math.cos(angle) * (x - cx) - Math.sin(angle) * (y- cy) + cx;
-            var rotatedY = Math.sin(angle) * (x - cx) + Math.cos(angle) * (y - cy) + cy;
-            
-            return [rotatedX, rotatedY]; 
-        }
-
-        function Animate(){
-            var radius = [];
-            var positionX = [];
-            var positionY = [];
-            var j = 0;
-
-            svg.selectAll("circle").each(function(d,i){
-                radius[j] = d3.select(this).style("r");
-                positionX[j]  = d3.select(this).style("cx");
-                positionY[j]  = d3.select(this).style("cy");
-                j++;
-            });
-            var shrink = svg.transition().duration(100);
-            var translation = svg.transition().delay(100).duration(100);
-            var grow = svg.transition().delay(300).duration(100);
-
-
-            shrink.selectAll("circle").style("cx",centerX).style("cy", centerY).style("r",0).ease(d3.easeQuadIn);                        
-            
-            translation.selectAll("circle")
-            .style("cx", function(d,i){
-                return positionX[i];
-            }).style("cy", function(d,i){
-                return positionY[i];
-            });
-            
-            grow.selectAll("circle").delay(function(d,i){
-                return i * 10; 
-            }).style("r", function(d,i){
-                return radius[i];
-            }).ease(d3.easeBounceOut);
-        }
+        
         </script>
     </body>
 </html>
